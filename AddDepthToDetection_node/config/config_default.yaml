@@ -1,0 +1,31 @@
+# Configuration for object detection node
+/object_det:
+  ros__parameters:
+    # print debug output
+    debug: true
+    # image source topic
+    in_depthframe_topic: "/background/depth"
+    # image destination topic
+    in_detection_topic: "/object_det/objects"
+        
+    # Use sensor data Quality of Service for messages
+    qos_sensor_data: true
+    # Message queue size
+    qos_history_depth: 5
+    # threshold for cutting background
+
+/gesture_det:
+  ros__parameters:
+    # print debug output
+    debug: true
+    # image source topic
+    in_depthframe_topic: "/background/depth"
+    # image destination topic
+    in_detection_topic: "/gesture_det/gestures"
+        
+    # Use sensor data Quality of Service for messages
+    qos_sensor_data: true
+    # Message queue size
+    qos_history_depth: 5
+    # threshold for cutting background
+
