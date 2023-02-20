@@ -1,15 +1,15 @@
 #include "add_depth_to_detection_node.hpp"
 #include <nlohmann/json.hpp>
+#include <math.h>
+#include <unistd.h>
 
 /**
  * @brief Contructor.
  */
 AddDepthToDetectionNode::AddDepthToDetectionNode() : Node("add_depth_to_detection_node", rclcpp::NodeOptions().use_intra_process_comms(false))
 {
-
 	this->declare_parameter("in_depthframe_topic", "");
 	this->declare_parameter("in_detection_topic", "");
-	this->declare_parameter("detection_key", "DETECTED_GESTURES");
 	this->declare_parameter("qos_sensor_data", true);
 	this->declare_parameter("qos_history_depth", 10);
 
@@ -20,14 +20,12 @@ AddDepthToDetectionNode::AddDepthToDetectionNode() : Node("add_depth_to_detectio
  */
 void AddDepthToDetectionNode::init()
 {
-
 	bool qos_sensor_data;
 	std::string in_depthframe_topic, in_detection_topic;
 	int qos_history_depth;
 
 	this->get_parameter("in_depthframe_topic", in_depthframe_topic);
 	this->get_parameter("in_detection_topic", in_detection_topic);
-	this->get_parameter("detection_key", m_detection_key);
 	this->get_parameter("qos_sensor_data", qos_sensor_data);
 	this->get_parameter("qos_history_depth", qos_history_depth);
 
@@ -47,57 +45,64 @@ void AddDepthToDetectionNode::init()
 	m_qos_profile_sysdef = m_qos_profile_sysdef.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
 	m_qos_profile_sysdef = m_qos_profile_sysdef.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-
-	RCLCPP_INFO(this->get_logger(), "creating subscription for ");
-	RCLCPP_INFO(this->get_logger(), in_depthframe_topic.c_str());
+	std::string logstr = "creating image subscription for " + in_depthframe_topic ;
+	RCLCPP_INFO(this->get_logger(), logstr.c_str());
 	m_depth_subscription = this->create_subscription<sensor_msgs::msg::Image>( in_depthframe_topic, m_qos_profile, std::bind(&AddDepthToDetectionNode::frameCallback, this, std::placeholders::_1));
 	//cv::namedWindow(m_window_name_depth, cv::WINDOW_AUTOSIZE);
 
-	m_detection_subscription = this->create_subscription<std_msgs::msg::String>( in_detection_topic, m_qos_profile, std::bind(&AddDepthToDetectionNode::objectCallback, this, std::placeholders::_1));
-	m_detection_publisher   = this->create_publisher<std_msgs::msg::String>(in_detection_topic + "_with_distance", m_qos_profile_sysdef);
+	sleep(1);
+
+	logstr = "creating detection subscription for " + in_detection_topic ;
+	RCLCPP_INFO(this->get_logger(), logstr.c_str());
+	m_detection_subscription 	= this->create_subscription<std_msgs::msg::String>( in_detection_topic, m_qos_profile, std::bind(&AddDepthToDetectionNode::objectCallback, this, std::placeholders::_1));
+	
+	logstr = "publishing to " + in_detection_topic + "_with_distance";
+	RCLCPP_INFO(this->get_logger(), logstr.c_str());
+	m_detection_publisher   	= this->create_publisher<std_msgs::msg::String>(in_detection_topic + "_with_distance", m_qos_profile_sysdef);
 
 }
 
 
 void AddDepthToDetectionNode::objectCallback(std_msgs::msg::String::SharedPtr obj_msg)
 {
+	if (m_image_present)
+	{
+		nlohmann::json obj_json = nlohmann::json::parse(obj_msg->data.data());		
+		try{
+			for (auto& [key, val] : obj_json.items()){
+				if (!val.is_array())
+					continue;
 
-	nlohmann::json obj_json = nlohmann::json::parse(obj_msg->data.data());		
-	try{
-		auto objects_amount = obj_json[m_detection_key].size();
+				int val_amount = val.size();
 
-		for (auto& [key, val] : obj_json.items()){
-			if (!val.is_array())
-				continue;
+				for(int i = 0; i <  val_amount; i++){
 
-			int val_amount = val.size();
-
-			for(int i = 0; i <  val_amount; i++){
-
-				if(obj_json[key][i].contains("center"))
-				{
-					double center_x = obj_json[key][i]["center"][0];
-					double center_y = obj_json[key][i]["center"][1];
-					cv::Size sz = m_last_depth_image.size();
-					int x = int(center_x * sz.width);
-					int y = int(center_y * sz.height);
-		
-					obj_json[key][i]["distance"] = (m_last_depth_image.at<uint16_t>(y,x) * 0.001); 
+					if(obj_json[key][i].contains("center"))
+					{
+						double center_x = obj_json[key][i]["center"][0];
+						double center_y = obj_json[key][i]["center"][1];
+						cv::Size sz = m_last_depth_image.size();
+						int x = int(center_x * sz.width);
+						int y = int(center_y * sz.height);
+	
+						int dist_mm = (int(m_last_depth_image.at<uint16_t>(y,x)));// * 0.001); 
+						obj_json[key][i]["distance"] = dist_mm;
+					}
 				}
 			}
+
+		} catch (...) {
+			RCLCPP_INFO(this->get_logger(), "get the object distance has failed somehow...");
 		}
 
-	} catch (...) {
-		RCLCPP_INFO(this->get_logger(), "get the object distance has failed somehow...");
-	}
-
-	auto message = std_msgs::msg::String();
-	message.data = obj_json.dump().c_str();
-	try{
-		m_detection_publisher->publish(message);
-	}
-	catch (...) {
-		RCLCPP_INFO(this->get_logger(), "hmm publishing dets has failed!! ");
+		auto message = std_msgs::msg::String();
+		message.data = obj_json.dump().c_str();
+		try{
+			m_detection_publisher->publish(message);
+		}
+		catch (...) {
+			RCLCPP_INFO(this->get_logger(), "hmm publishing dets has failed!! ");
+		}
 	}
 }
 
@@ -113,8 +118,11 @@ void AddDepthToDetectionNode::frameCallback(sensor_msgs::msg::Image::SharedPtr i
 	//cv::setWindowTitle(m_window_name_depth, std::to_string(m_loop_duration_depth));
 	//cv::setWindowTitle(m_window_name, std::to_string(0.0));
 
-
 	m_last_depth_image = color_image;
+
+	usleep(10);
+
+	m_image_present = true;
 
 	//cv::cvtColor(color_image, color_image, cv::COLOR_RGB2BGR);
 	//imshow(m_window_name_depth, color_image);

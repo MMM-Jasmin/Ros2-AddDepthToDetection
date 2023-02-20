@@ -42,21 +42,6 @@ def generate_launch_description():
 				#arguments = [('__log_level:=debug')]
 			),
 		])
-	elif ROS_DISTRO == "foxy":
-		return LaunchDescription([
-			Node(
-				package = package,
-				namespace = namespace,
-				executable = executable,
-				name = 'object_det',
-				parameters = [config],
-				#parameter = {"debug": True},
-				output = 'screen',
-				arguments = ['--name', 'object_det'],
-				#emulate_tty = True,
-				#arguments = [('__log_level:=debug')]
-			),
-		])
 	elif ROS_DISTRO == "humble":
 		return LaunchDescription([
 			Node(
@@ -67,7 +52,7 @@ def generate_launch_description():
 				parameters = [config],
 				#parameter = {"debug": True},
 				output = 'screen',
-				arguments = ['--name', 'object_det'],
+				arguments = ['--name', 'object_det_depth'],
 				#emulate_tty = True,
 				#arguments = [('__log_level:=debug')]
 			),

@@ -1,7 +1,4 @@
 #pragma once
-// SYSTEM
-#include <chrono>
-#include <iostream>
 // ROS
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -33,13 +30,12 @@ private:
 
 	cv::Mat m_last_depth_image;
 	int m_width, m_height;
+	bool m_image_present = false;
 
 	rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr m_depth_subscription;
 	rclcpp::Subscription<std_msgs::msg::String>::SharedPtr m_detection_subscription;
 
 	rclcpp::Publisher<std_msgs::msg::String>::SharedPtr m_detection_publisher 	= nullptr;
-
-
 
 	rclcpp::QoS m_qos_profile = rclcpp::SystemDefaultsQoS();
 	rclcpp::QoS m_qos_profile_sysdef = rclcpp::SystemDefaultsQoS();
