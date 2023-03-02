@@ -82,10 +82,25 @@ void AddDepthToDetectionNode::objectCallback(std_msgs::msg::String::SharedPtr ob
 						double center_x = obj_json[key][i]["center"][0];
 						double center_y = obj_json[key][i]["center"][1];
 						cv::Size sz = m_last_depth_image.size();
+
 						int x = int(center_x * sz.width);
 						int y = int(center_y * sz.height);
+						
+						if (x > sz.width - 1)
+							x = sz.width - 1;
+						if (x < 0)
+							x = 0;
+
+						if (y > sz.height - 1)
+							y = sz.height - 1;
+						if (y < 0)
+							y = 0;
 	
-						int dist_mm = (int(m_last_depth_image.at<uint16_t>(y,x)));// * 0.001); 
+						int dist_mm = (int(m_last_depth_image.at<uint16_t>(y,x)));
+						
+						if (dist_mm == 0)
+							dist_mm = -1;
+
 						obj_json[key][i]["distance"] = dist_mm;
 					}
 				}
