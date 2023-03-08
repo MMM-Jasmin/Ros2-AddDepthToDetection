@@ -67,8 +67,10 @@ void AddDepthToDetectionNode::objectCallback(std_msgs::msg::String::SharedPtr ob
 {
 	if (m_image_present)
 	{
-		nlohmann::json obj_json = nlohmann::json::parse(obj_msg->data.data());		
 		try{
+
+			nlohmann::json obj_json = nlohmann::json::parse(obj_msg->data.data());		
+
 			for (auto& [key, val] : obj_json.items()){
 				if (!val.is_array())
 					continue;
@@ -106,17 +108,13 @@ void AddDepthToDetectionNode::objectCallback(std_msgs::msg::String::SharedPtr ob
 				}
 			}
 
-		} catch (...) {
-			RCLCPP_INFO(this->get_logger(), "get the object distance has failed somehow...");
-		}
-
-		auto message = std_msgs::msg::String();
-		message.data = obj_json.dump().c_str();
-		try{
+			auto message = std_msgs::msg::String();
+			message.data = obj_json.dump().c_str();
+		
 			m_detection_publisher->publish(message);
 		}
 		catch (...) {
-			RCLCPP_INFO(this->get_logger(), "hmm publishing dets has failed!! ");
+			RCLCPP_INFO(this->get_logger(), "objectCallback has failed!! ");
 		}
 	}
 }
@@ -128,25 +126,29 @@ void AddDepthToDetectionNode::objectCallback(std_msgs::msg::String::SharedPtr ob
  */
 void AddDepthToDetectionNode::frameCallback(sensor_msgs::msg::Image::SharedPtr img_msg)
 {
-	cv::Size image_size(static_cast<int>(img_msg->width), static_cast<int>(img_msg->height));
-	cv::Mat color_image(image_size, CV_16U, (void *)img_msg->data.data(), cv::Mat::AUTO_STEP); 
-	//cv::setWindowTitle(m_window_name_depth, std::to_string(m_loop_duration_depth));
-	//cv::setWindowTitle(m_window_name, std::to_string(0.0));
+	try{
+		cv::Size image_size(static_cast<int>(img_msg->width), static_cast<int>(img_msg->height));
+		cv::Mat color_image(image_size, CV_16U, (void *)img_msg->data.data(), cv::Mat::AUTO_STEP); 
+		//cv::setWindowTitle(m_window_name_depth, std::to_string(m_loop_duration_depth));
+		//cv::setWindowTitle(m_window_name, std::to_string(0.0));
 
-	m_last_depth_image = color_image;
+		m_last_depth_image = color_image;
 
-	usleep(10);
+		usleep(10);
 
-	m_image_present = true;
+		m_image_present = true;
 
-	//cv::cvtColor(color_image, color_image, cv::COLOR_RGB2BGR);
-	//imshow(m_window_name_depth, color_image);
+		//cv::cvtColor(color_image, color_image, cv::COLOR_RGB2BGR);
+		//imshow(m_window_name_depth, color_image);
 
-	//if (!(cv::waitKey(1) < 0 && cv::getWindowProperty(m_window_name_depth, cv::WND_PROP_AUTOSIZE) >= 0))
-	//	rclcpp::shutdown();
+		//if (!(cv::waitKey(1) < 0 && cv::getWindowProperty(m_window_name_depth, cv::WND_PROP_AUTOSIZE) >= 0))
+		//	rclcpp::shutdown();
 
-	//if (!(cv::waitKey(1) < 0 && cv::getWindowProperty(m_window_name_depth, cv::WND_PROP_AUTOSIZE) >= 0))
-	//	rclcpp::shutdown();
+		//if (!(cv::waitKey(1) < 0 && cv::getWindowProperty(m_window_name_depth, cv::WND_PROP_AUTOSIZE) >= 0))
+		//	rclcpp::shutdown();
+	} catch (...) {
+			RCLCPP_INFO(this->get_logger(), "frameCallback has failed!! ");
+	}
 
 }
 
