@@ -37,13 +37,14 @@ void AddDepthToDetectionNode::init()
 	m_qos_profile = m_qos_profile.keep_last(qos_history_depth);
 	//m_qos_profile = m_qos_profile.lifespan(std::chrono::milliseconds(500));
 	m_qos_profile = m_qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
-	m_qos_profile = m_qos_profile.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
-	
+	//m_qos_profile = m_qos_profile.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+	m_qos_profile = m_qos_profile.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
 
 	m_qos_profile_sysdef = m_qos_profile_sysdef.keep_last(qos_history_depth);
 	//m_qos_profile_sysdef = m_qos_profile_sysdef.lifespan(std::chrono::milliseconds(500));
 	m_qos_profile_sysdef = m_qos_profile_sysdef.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
-	m_qos_profile_sysdef = m_qos_profile_sysdef.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+	//m_qos_profile_sysdef = m_qos_profile_sysdef.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+	//m_qos_profile_sysdef = m_qos_profile_sysdef.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
 
 	std::string logstr = "creating image subscription for " + in_depthframe_topic ;
 	RCLCPP_INFO(this->get_logger(), logstr.c_str());
@@ -62,11 +63,12 @@ void AddDepthToDetectionNode::init()
 
 }
 
-
 void AddDepthToDetectionNode::objectCallback(std_msgs::msg::String::SharedPtr obj_msg)
 {
 	if (m_image_present)
 	{
+		//std::cout << obj_msg->data.data() << std::endl;
+
 		try{
 
 			nlohmann::json obj_json = nlohmann::json::parse(obj_msg->data.data());		
@@ -113,6 +115,9 @@ void AddDepthToDetectionNode::objectCallback(std_msgs::msg::String::SharedPtr ob
 		
 			m_detection_publisher->publish(message);
 		}
+		//catch (nlohmann::json::exception& e) {
+		//	RCLCPP_INFO(this->get_logger(), e.what());
+		//}
 		catch (...) {
 			RCLCPP_INFO(this->get_logger(), "objectCallback has failed!! ");
 		}
