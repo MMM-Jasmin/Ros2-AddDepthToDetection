@@ -74,12 +74,9 @@ message(STATUS "+===================================")
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(message_filters REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2_eigen REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
-find_package(image_transport REQUIRED)
-find_package(camera_interfaces REQUIRED)
+
 
 # Preprocessor define for ros2 distribution eloquent elusor
 if ($ENV{ROS_DISTRO} STREQUAL "eloquent")
@@ -103,13 +100,8 @@ ament_target_dependencies(
 	${PROJECT_BINARY}
 	"rclcpp"
 	"sensor_msgs"
-	"message_filters"
-	"tf2_ros"
-	"tf2_eigen"
+	"std_msgs"
 	"ament_index_cpp"
-	"image_transport"
-
-	"camera_interfaces"
 )
 
 # library
@@ -117,13 +109,8 @@ ament_target_dependencies(
 	${PROJECT_LIBRARY}
 	"rclcpp"
 	"sensor_msgs"
-	"message_filters"
-	"tf2_ros"
-	"tf2_eigen"
+	"std_msgs"
 	"ament_index_cpp"
-	"image_transport"
-
-	"camera_interfaces"
 )
 
 #############
