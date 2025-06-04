@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 {
 	signal(SIGINT, signalHandler);
 
-	std::cout << "+==========[ Image Node ]==========+" << std::endl;
+	std::cout << "+==========[ Add Depth Node ]==========+" << std::endl;
 	rclcpp::init(argc, argv);
 
 	std::shared_ptr<AddDepthToDetectionNode> image_node = std::make_shared<AddDepthToDetectionNode>();
